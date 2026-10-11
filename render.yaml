@@ -1,0 +1,55 @@
+services:
+  # Web App
+  - type: web
+    name: ylive-dekav1
+    runtime: node
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_BASE_URL
+        sync: false
+      - key: XENDIT_SECRET_KEY
+        sync: false
+      - key: XENDIT_WEBHOOK_TOKEN
+        sync: false
+      - key: FONNTE_TOKEN
+        sync: false
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: CRON_SECRET
+        sync: false
+      - key: DB_PATH
+        value: /data/registrations.db
+    disk:
+      name: ylive-data
+      mountPath: /data
+      sizeGB: 1
+
+  # Cron Job (setiap menit)
+  - type: cron
+    name: ylive-dekav1-cron
+    runtime: node
+    plan: starter
+    schedule: "* * * * *"
+    buildCommand: npm install
+    startCommand: >
+      node -e "
+        fetch(process.env.APP_URL + '/api/cron', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + process.env.CRON_SECRET }
+        }).then(r => r.json()).then(console.log).catch(console.error)
+      "
+    envVars:
+      - key: APP_URL
+        sync: false
+      - key: CRON_SECRET
+        sync: false
